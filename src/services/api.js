@@ -1,11 +1,11 @@
-// En document-microservice/src/services/api.js
-// URL base de la API
+// In document-microservice/src/services/api.js
+// Base URL of the API
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api"
 
-// Función para obtener el token de autenticación de localStorage
+// Function to get the authentication token from localStorage
 const getAuthHeaders = () => {
   const token = localStorage.getItem("auth_token")
-  console.log("Token obtenido:", token ? "Token presente" : "Token no encontrado")
+  console.log("Token obtained:", token ? "Token present" : "Token not found")
   return token
     ? {
         Authorization: `Bearer ${token}`,
@@ -14,7 +14,7 @@ const getAuthHeaders = () => {
     : {}
 }
 
-// Obtener todos los documentos
+// Get all documents
 export async function fetchDocuments(userId = null) {
   try {
     let url = `${API_URL}/documents`
@@ -32,17 +32,17 @@ export async function fetchDocuments(userId = null) {
     })
 
     if (!response.ok) {
-      throw new Error("Error al obtener documentos")
+      throw new Error("Error getting documents")
     }
 
     return await response.json()
   } catch (error) {
-    console.error("Error al obtener documentos:", error)
+    console.error("Error getting documents:", error)
     throw error
   }
 }
 
-// Subir un documento
+// Upload a document
 export async function uploadDocument(formData) {
   try {
     const response = await fetch(`${API_URL}/documents`, {
@@ -52,23 +52,23 @@ export async function uploadDocument(formData) {
       credentials: "same-origin",
       headers: {
         ...getAuthHeaders(),
-        // No establecer Content-Type, se establecerá automáticamente para FormData
+        // Do not set Content-Type, it will be set automatically for FormData
       },
     })
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || "Error al subir documento")
+      throw new Error(errorData.message || "Error uploading document")
     }
 
     return await response.json()
   } catch (error) {
-    console.error("Error al subir documento:", error)
+    console.error("Error uploading document:", error)
     throw error
   }
 }
 
-// Eliminar un documento
+// Delete a document
 export async function deleteDocument(documentId) {
   try {
     const response = await fetch(`${API_URL}/documents/${documentId}`, {
@@ -81,17 +81,17 @@ export async function deleteDocument(documentId) {
     })
 
     if (!response.ok) {
-      throw new Error("Error al eliminar documento")
+      throw new Error("Error deleting document")
     }
 
     return true
   } catch (error) {
-    console.error("Error al eliminar documento:", error)
+    console.error("Error deleting document:", error)
     throw error
   }
 }
 
-// Obtener detalles de un documento
+// Get document details
 export async function getDocumentDetails(documentId) {
   try {
     const response = await fetch(`${API_URL}/documents/${documentId}`, {
@@ -104,12 +104,12 @@ export async function getDocumentDetails(documentId) {
     })
 
     if (!response.ok) {
-      throw new Error("Error al obtener detalles del documento")
+      throw new Error("Error getting document details")
     }
 
     return await response.json()
   } catch (error) {
-    console.error("Error al obtener detalles del documento:", error)
+    console.error("Error getting document details:", error)
     throw error
   }
 }

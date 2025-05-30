@@ -8,27 +8,27 @@ import dotenv from "dotenv"
 import fs from "fs"
 import jwt from 'jsonwebtoken'
 
-// Cargar variables de entorno
+// Load environment variables
 dotenv.config()
 
 const { Pool } = pg
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Crear aplicación Express
+// Create Express app
 const app = express()
 const PORT = process.env.PORT || 3001
 
-// Configurar conexión a PostgreSQL
+// Configure PostgreSQL connection
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
 })
 
-// Configurar CORS - IMPORTANTE: Esto debe estar antes de cualquier otra middleware
+// Configure CORS - IMPORTANT: This must come before any other middleware
 app.use(
   cors({
-    // Especificar orígenes permitidos en lugar de usar el comodín *
+    // Specify allowed origins instead of using wildcard *
     origin: ["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173"],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "x-access-token"],
@@ -36,63 +36,62 @@ app.use(
   }),
 )
 
-// Middleware para manejar preflight requests
+// Middleware to handle preflight requests
 app.options("*", cors())
 
-
 app.use((req, res, next) => {
-  // Obtener el token de autorización
+  // Get the authorization token
   const authHeader = req.headers.authorization;
   const xAccessToken = req.headers['x-access-token'];
-  console.log("[Backend] Headers completos:", req.headers);
+  console.log("[Backend] Full headers:", req.headers);
   console.log("[Backend] Authorization header:", authHeader);
   console.log("[Backend] x-access-token header:", xAccessToken);
   
   let token = null;
   
   if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.substring(7); // Quitar 'Bearer '
+    token = authHeader.substring(7); // Remove 'Bearer '
   } else if (xAccessToken) {
     token = xAccessToken;
   }
 
-  console.log("[Backend] Token extraído:", token ? "Token presente" : "Token no encontrado");
+  console.log("[Backend] Extracted token:", token ? "Token present" : "Token not found");
 
   if (token) {
     try {
-      // No verificamos la firma del token porque no tenemos la clave secreta
-      // Solo extraemos la información del payload
+      // We do not verify the token signature because we don't have the secret key
+      // We only extract payload information
       const decoded = jwt.decode(token)
-      console.log("Token decodificado:", decoded)
+      console.log("Decoded token:", decoded)
       req.user = {
         id: decoded.id || decoded.sub || 'anonymous',
-        name: decoded.username || decoded.name || 'Usuario Anónimo'
+        name: decoded.username || decoded.name || 'Anonymous User'
       }
-      console.log('Usuario autenticado:', req.user)
+      console.log('Authenticated user:', req.user)
     } catch (error) {
-      console.error('Error al decodificar token:', error)
-      req.user = { id: 'anonymous', name: 'Usuario Anónimo' }
+      console.error('Error decoding token:', error)
+      req.user = { id: 'anonymous', name: 'Anonymous User' }
     }
   } else {
-    console.log("No se recibió token")
-    req.user = { id: 'anonymous', name: 'Usuario Anónimo' }
+    console.log("No token received")
+    req.user = { id: 'anonymous', name: 'Anonymous User' }
   }
   
   next()
 })
 
-// Middleware para parsear JSON
+// Middleware to parse JSON
 app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ limit: '50mb', extended: true }))
 
-// Crear directorio de uploads si no existe
+// Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, "../uploads")
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true })
-  console.log("Directorio de uploads creado")
+  console.log("Uploads directory created")
 }
 
-// Configurar multer para subida de archivos
+// Configure multer for file upload
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadsDir)
@@ -105,17 +104,17 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 20 * 1024 * 1024 }, // 10MB límite
+  limits: { fileSize: 20 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
     if (file.mimetype === "application/pdf") {
       cb(null, true)
     } else {
-      cb(new Error("Solo se permiten archivos PDF"), false)
+      cb(new Error("Only PDF files are allowed"), false)
     }
   },
 })
 
-// Servir archivos estáticos
+// Serve static files
 app.use("/uploads", express.static(uploadsDir))
 
 // Create tables if they don't exist
@@ -135,9 +134,9 @@ async function initializeDatabase() {
         uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `)
-    console.log("Base de datos inicializada correctamente")
+    console.log("Database initialized successfully")
   } catch (error) {
-    console.error("Error al inicializar la base de datos:", error)
+    console.error("Error initializing database:", error)
   }
 }
 
@@ -176,15 +175,15 @@ app.get("/api/documents", async (req, res) => {
     
     res.json(documents)
   } catch (error) {
-    console.error("Error al obtener documentos:", error)
-    res.status(500).json({ message: "Error al obtener documentos" })
+    console.error("Error fetching documents:", error)
+    res.status(500).json({ message: "Error fetching documents" })
   }
 })
 
 app.post("/api/documents", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ message: "No se ha subido ningún archivo" })
+      return res.status(400).json({ message: "No file uploaded" })
     }
 
     const { title, description, category } = req.body
@@ -192,7 +191,7 @@ app.post("/api/documents", upload.single("file"), async (req, res) => {
     const userName = req.user.name
 
     if (!title) {
-      return res.status(400).json({ message: "El título del documento es obligatorio" })
+      return res.status(400).json({ message: "Document title is required" })
     }
 
     const result = await pool.query(
@@ -215,11 +214,11 @@ app.post("/api/documents", upload.single("file"), async (req, res) => {
 
     res.status(201).json({
       id: result.rows[0].id,
-      message: "Documento subido correctamente",
+      message: "Document uploaded successfully",
     })
   } catch (error) {
-    console.error("Error al subir documento:", error)
-    res.status(500).json({ message: "Error al subir documento" })
+    console.error("Error uploading document:", error)
+    res.status(500).json({ message: "Error uploading document" })
   }
 })
 
@@ -230,15 +229,15 @@ app.get("/api/documents/:id/download", async (req, res) => {
     const result = await pool.query("SELECT filepath, filename FROM documents WHERE id = $1", [id])
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Documento no encontrado" })
+      return res.status(404).json({ message: "Document not found" })
     }
 
     const { filepath, filename } = result.rows[0]
 
     res.download(filepath, filename)
   } catch (error) {
-    console.error("Error al descargar documento:", error)
-    res.status(500).json({ message: "Error al descargar documento" })
+    console.error("Error downloading document:", error)
+    res.status(500).json({ message: "Error downloading document" })
   }
 })
 
@@ -247,53 +246,53 @@ app.delete("/api/documents/:id", async (req, res) => {
     const { id } = req.params
     const userId = req.user.id
 
-    // Obtener ruta del archivo y usuario antes de eliminar el registro
+    // Get file path and user before deleting the record
     const fileResult = await pool.query("SELECT filepath, user_id FROM documents WHERE id = $1", [id])
 
     if (fileResult.rows.length === 0) {
-      return res.status(404).json({ message: "Documento no encontrado" })
+      return res.status(404).json({ message: "Document not found" })
     }
     
-    // Verificar si el usuario es el propietario del documento
-    // Si el usuario es 'anonymous', no puede eliminar documentos
+    // Check if user is the owner of the document
+    // If the user is 'anonymous', they cannot delete documents
     if (userId === 'anonymous' || (userId !== 'anonymous' && fileResult.rows[0].user_id !== userId)) {
-      return res.status(403).json({ message: "No tienes permiso para eliminar este documento" })
+      return res.status(403).json({ message: "You do not have permission to delete this document" })
     }
 
-    // Eliminar de la base de datos
+    // Delete from database
     await pool.query("DELETE FROM documents WHERE id = $1", [id])
 
-    res.json({ message: "Documento eliminado correctamente" })
+    res.json({ message: "Document deleted successfully" })
   } catch (error) {
-    console.error("Error al eliminar documento:", error)
-    res.status(500).json({ message: "Error al eliminar documento" })
+    console.error("Error deleting document:", error)
+    res.status(500).json({ message: "Error deleting document" })
   }
 })
 
-// Middleware para manejo de errores
+// Error handling middleware
 app.use((err, req, res, next) => {
-  console.error("Error del servidor:", err)
+  console.error("Server error:", err)
 
-  // Aplicar cabeceras CORS también a las respuestas de error
+  // Apply CORS headers to error responses as well
   res.header("Access-Control-Allow-Origin", "*")
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
   res.status(500).json({
-    message: err.message || "Ha ocurrido un error inesperado",
+    message: err.message || "An unexpected error occurred",
     error: process.env.NODE_ENV === "production" ? {} : err,
   })
 })
 
-// Iniciar servidor
+// Start server
 app.listen(PORT, async () => {
-  console.log(`Servidor ejecutándose en el puerto ${PORT}`)
+  console.log(`Server running on port ${PORT}`)
   await initializeDatabase()
 })
 
 app.get('/api/auth/token', async (req, res) => {
   try {
-    // Obtener el token de la aplicación principal
+    // Get the token from the main application
     const response = await fetch('http://localhost:4000/api/auth/token', {
       headers: {
         'Content-Type': 'application/json'
@@ -301,14 +300,14 @@ app.get('/api/auth/token', async (req, res) => {
     });
     
     if (!response.ok) {
-      throw new Error(`Error al obtener token: ${response.status}`);
+      throw new Error(`Error fetching token: ${response.status}`);
     }
     
     const data = await response.json();
     res.json(data);
   } catch (error) {
-    console.error('Error al obtener token:', error);
-    res.status(500).json({ message: 'Error al obtener token' });
+    console.error('Error fetching token:', error);
+    res.status(500).json({ message: 'Error fetching token' });
   }
 });
 

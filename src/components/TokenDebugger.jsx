@@ -5,7 +5,7 @@ const TokenDebugger = () => {
   const [token, setToken] = useState('');
   
   useEffect(() => {
-    // Verificar el token cada segundo
+    // Verify the token every second
     const interval = setInterval(() => {
       const storedToken = localStorage.getItem('auth_token');
       setToken(storedToken || 'No token found');

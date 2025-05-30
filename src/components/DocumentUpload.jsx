@@ -1,4 +1,4 @@
-// En document-microservice/src/components/DocumentUpload.jsx
+// In document-microservice/src/components/DocumentUpload.jsx
 import { useState } from "react"
 import { uploadDocument } from "../services/api"
 import { useNavigate } from "react-router-dom"
@@ -12,20 +12,20 @@ function DocumentUpload() {
   const [error, setError] = useState(null)
   const navigate = useNavigate()
   
-  // Verificar si el usuario está autenticado
+  // Check if the user is authenticated
   const isAuthenticated = !!localStorage.getItem("auth_token")
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0]
 
     if (selectedFile && selectedFile.type !== "application/pdf") {
-      setError("Solo se permiten archivos PDF")
+      setError("Only PDF files are allowed")
       setFile(null)
       return
     }
 
     if (selectedFile && selectedFile.size > 20 * 1024 * 1024) {
-      setError("El archivo no debe superar los 20MB")
+      setError("The file must not exceed 20MB")
       setFile(null)
       return
     }
@@ -38,12 +38,12 @@ function DocumentUpload() {
     e.preventDefault()
 
     if (!title.trim()) {
-      setError("El título es obligatorio")
+      setError("Title is required")
       return
     }
 
     if (!file) {
-      setError("Debes seleccionar un archivo PDF")
+      setError("You must select a PDF file")
       return
     }
 
@@ -59,10 +59,10 @@ function DocumentUpload() {
 
       await uploadDocument(formData)
 
-      // Redirigir a la biblioteca de documentos
+      // Redirect to the document library
       navigate("/")
     } catch (err) {
-      setError(err.message || "Error al subir el documento")
+      setError(err.message || "Error uploading the document")
     } finally {
       setLoading(false)
     }
@@ -70,19 +70,19 @@ function DocumentUpload() {
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Subir Documento</h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">Upload Document</h1>
 
       {!isAuthenticated && (
         <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
           <p>
-            Estás subiendo un documento como usuario anónimo. Para asociar este documento a tu cuenta,{" "}
+            You are uploading a document as an anonymous user. To associate this document with your account,{" "}
             <a 
               href={`${import.meta.env.VITE_MAIN_APP_URL || 'http://localhost:5173'}/login`} 
               className="font-bold underline"
             >
-              inicia sesión
+              log in
             </a>{" "}
-            primero.
+            first.
           </p>
         </div>
       )}
@@ -92,7 +92,7 @@ function DocumentUpload() {
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="title">
-            Título *
+            Title *
           </label>
           <input
             type="text"
@@ -100,28 +100,28 @@ function DocumentUpload() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            placeholder="Título del documento"
+            placeholder="Document title"
             required
           />
         </div>
 
         <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
-            Descripción
+            Description
           </label>
           <textarea
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            placeholder="Descripción del documento (opcional)"
+            placeholder="Document description (optional)"
             rows="3"
           ></textarea>
         </div>
 
         <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="category">
-            Categoría
+            Category
           </label>
           <select
             id="category"
@@ -130,17 +130,17 @@ function DocumentUpload() {
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           >
             <option value="general">General</option>
-            <option value="informe">Informe</option>
+            <option value="informe">Report</option>
             <option value="manual">Manual</option>
-            <option value="presentacion">Presentación</option>
-            <option value="articulo">Artículo</option>
-            <option value="otro">Otro</option>
+            <option value="presentacion">Presentation</option>
+            <option value="articulo">Article</option>
+            <option value="otro">Other</option>
           </select>
         </div>
 
         <div className="mb-6">
           <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="file">
-            Archivo PDF *
+            PDF File *
           </label>
           <input
             type="file"
@@ -150,7 +150,7 @@ function DocumentUpload() {
             accept="application/pdf"
             required
           />
-          <p className="text-xs text-gray-500 mt-1">Solo archivos PDF. Tamaño máximo: 20MB</p>
+          <p className="text-xs text-gray-500 mt-1">Only PDF files. Maximum size: 20MB</p>
         </div>
 
         <div className="flex items-center justify-between">
@@ -161,10 +161,10 @@ function DocumentUpload() {
               loading ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
-            {loading ? "Subiendo..." : "Subir Documento"}
+            {loading ? "Uploading..." : "Upload Document"}
           </button>
           <a href="/" className="inline-block align-baseline font-bold text-sm text-blue-600 hover:text-blue-800">
-            Cancelar
+            Cancel
           </a>
         </div>
       </form>

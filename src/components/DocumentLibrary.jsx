@@ -1,4 +1,4 @@
-// En document-microservice/src/components/DocumentLibrary.jsx
+// In document-microservice/src/components/DocumentLibrary.jsx
 import { useState, useEffect } from "react";
 import { fetchDocuments, deleteDocument } from "../services/api";
 import TokenDebugger from "./TokenDebugger";
@@ -9,13 +9,13 @@ function DocumentLibrary() {
   const [error, setError] = useState(null);
   const [showMyDocuments, setShowMyDocuments] = useState(false);
 
-  // Obtener información del usuario del localStorage
+  // Get user info from localStorage
   const getUserInfo = () => {
     const token = localStorage.getItem("auth_token");
     if (!token) return null;
 
     try {
-      // Decodificar el token (sin verificar la firma)
+      // Decode the token (without verifying the signature)
       const base64Url = token.split(".")[1];
       const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
       const jsonPayload = decodeURIComponent(
@@ -29,7 +29,7 @@ function DocumentLibrary() {
 
       return JSON.parse(jsonPayload);
     } catch (error) {
-      console.error("Error al decodificar token:", error);
+      console.error("Error decoding token:", error);
       return null;
     }
   };
@@ -44,13 +44,13 @@ function DocumentLibrary() {
   const loadDocuments = async () => {
     try {
       setLoading(true);
-      // Si showMyDocuments es true y el usuario está autenticado, filtrar por userId
+      // If showMyDocuments is true and the user is authenticated, filter by userId
       const userId = showMyDocuments && userInfo ? userInfo.id : null;
       const data = await fetchDocuments(userId);
       setDocuments(data);
       setError(null);
     } catch (err) {
-      setError("Error al cargar los documentos. Por favor, intenta de nuevo.");
+      setError("Error loading documents. Please try again.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -59,14 +59,14 @@ function DocumentLibrary() {
 
   const handleDelete = async (id) => {
     if (
-      window.confirm("¿Estás seguro de que deseas eliminar este documento?")
+      window.confirm("Are you sure you want to delete this document?")
     ) {
       try {
         await deleteDocument(id);
         setDocuments(documents.filter((doc) => doc.id !== id));
       } catch (err) {
         setError(
-          "Error al eliminar el documento. Por favor, intenta de nuevo."
+          "Error deleting the document. Please try again."
         );
         console.error(err);
       }
@@ -88,10 +88,10 @@ function DocumentLibrary() {
     <div className="bg-white shadow-md rounded-lg p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">
-          Biblioteca de Documentos
+          Document Library
         </h1>
         <div className="flex space-x-4">
-          {/* Añadir el depurador de token */}
+          {/* Add the token debugger */}
           <TokenDebugger />
           {isAuthenticated && (
             <button
@@ -99,15 +99,15 @@ function DocumentLibrary() {
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
             >
               {showMyDocuments
-                ? "Ver todos los documentos"
-                : "Ver mis documentos"}
+                ? "View all documents"
+                : "View my documents"}
             </button>
           )}
           <a
             href="/upload"
             className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
           >
-            Subir Documento
+            Upload Document
           </a>
         </div>
       </div>
@@ -124,14 +124,14 @@ function DocumentLibrary() {
         <div className="text-center py-10">
           <p className="text-gray-500 text-lg">
             {showMyDocuments
-              ? "No has subido ningún documento aún."
-              : "No hay documentos disponibles."}
+              ? "You haven't uploaded any documents yet."
+              : "No documents available."}
           </p>
           <a
             href="/upload"
             className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
           >
-            Subir tu primer documento
+            Upload your first document
           </a>
         </div>
       ) : (
@@ -139,12 +139,12 @@ function DocumentLibrary() {
           <table className="min-w-full bg-white">
             <thead>
               <tr className="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
-                <th className="py-3 px-6 text-left">Título</th>
-                <th className="py-3 px-6 text-left">Categoría</th>
-                <th className="py-3 px-6 text-left">Subido por</th>
-                <th className="py-3 px-6 text-left">Tamaño</th>
-                <th className="py-3 px-6 text-left">Fecha</th>
-                <th className="py-3 px-6 text-center">Acciones</th>
+                <th className="py-3 px-6 text-left">Title</th>
+                <th className="py-3 px-6 text-left">Category</th>
+                <th className="py-3 px-6 text-left">Uploaded by</th>
+                <th className="py-3 px-6 text-left">Size</th>
+                <th className="py-3 px-6 text-left">Date</th>
+                <th className="py-3 px-6 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="text-gray-600 text-sm">
@@ -167,7 +167,7 @@ function DocumentLibrary() {
                     </span>
                   </td>
                   <td className="py-3 px-6 text-left">
-                    {doc.user_name || "Usuario Anónimo"}
+                    {doc.user_name || "Anonymous User"}
                   </td>
                   <td className="py-3 px-6 text-left">
                     {formatFileSize(doc.filesize)}
@@ -182,7 +182,7 @@ function DocumentLibrary() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:text-blue-900"
-                        title="Ver"
+                        title="View"
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -208,7 +208,7 @@ function DocumentLibrary() {
                       <a
                         href={doc.downloadUrl}
                         className="text-green-600 hover:text-green-900"
-                        title="Descargar"
+                        title="Download"
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -231,7 +231,7 @@ function DocumentLibrary() {
                           <button
                             onClick={() => handleDelete(doc.id)}
                             className="text-red-600 hover:text-red-900"
-                            title="Eliminar"
+                            title="Delete"
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
