@@ -1,0 +1,175 @@
+// En document-microservice/src/components/DocumentUpload.jsx
+import { useState } from "react"
+import { uploadDocument } from "../services/api"
+import { useNavigate } from "react-router-dom"
+
+function DocumentUpload() {
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+  const [category, setCategory] = useState("general")
+  const [file, setFile] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const navigate = useNavigate()
+  
+  // Verificar si el usuario está autenticado
+  const isAuthenticated = !!localStorage.getItem("auth_token")
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0]
+
+    if (selectedFile && selectedFile.type !== "application/pdf") {
+      setError("Solo se permiten archivos PDF")
+      setFile(null)
+      return
+    }
+
+    if (selectedFile && selectedFile.size > 20 * 1024 * 1024) {
+      setError("El archivo no debe superar los 20MB")
+      setFile(null)
+      return
+    }
+
+    setFile(selectedFile)
+    setError(null)
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    if (!title.trim()) {
+      setError("El título es obligatorio")
+      return
+    }
+
+    if (!file) {
+      setError("Debes seleccionar un archivo PDF")
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError(null)
+
+      const formData = new FormData()
+      formData.append("title", title)
+      formData.append("description", description)
+      formData.append("category", category)
+      formData.append("file", file)
+
+      await uploadDocument(formData)
+
+      // Redirigir a la biblioteca de documentos
+      navigate("/")
+    } catch (err) {
+      setError(err.message || "Error al subir el documento")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="bg-white shadow-md rounded-lg p-6">
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">Subir Documento</h1>
+
+      {!isAuthenticated && (
+        <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
+          <p>
+            Estás subiendo un documento como usuario anónimo. Para asociar este documento a tu cuenta,{" "}
+            <a 
+              href={`${import.meta.env.VITE_MAIN_APP_URL || 'http://localhost:5173'}/login`} 
+              className="font-bold underline"
+            >
+              inicia sesión
+            </a>{" "}
+            primero.
+          </p>
+        </div>
+      )}
+
+      {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
+
+      <form onSubmit={handleSubmit}>
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="title">
+            Título *
+          </label>
+          <input
+            type="text"
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            placeholder="Título del documento"
+            required
+          />
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
+            Descripción
+          </label>
+          <textarea
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            placeholder="Descripción del documento (opcional)"
+            rows="3"
+          ></textarea>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="category">
+            Categoría
+          </label>
+          <select
+            id="category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          >
+            <option value="general">General</option>
+            <option value="informe">Informe</option>
+            <option value="manual">Manual</option>
+            <option value="presentacion">Presentación</option>
+            <option value="articulo">Artículo</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+
+        <div className="mb-6">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="file">
+            Archivo PDF *
+          </label>
+          <input
+            type="file"
+            id="file"
+            onChange={handleFileChange}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            accept="application/pdf"
+            required
+          />
+          <p className="text-xs text-gray-500 mt-1">Solo archivos PDF. Tamaño máximo: 20MB</p>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <button
+            type="submit"
+            disabled={loading}
+            className={`bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
+              loading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+          >
+            {loading ? "Subiendo..." : "Subir Documento"}
+          </button>
+          <a href="/" className="inline-block align-baseline font-bold text-sm text-blue-600 hover:text-blue-800">
+            Cancelar
+          </a>
+        </div>
+      </form>
+    </div>
+  )
+}
+
+export default DocumentUpload
