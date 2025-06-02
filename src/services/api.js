@@ -1,115 +1,84 @@
-// In document-microservice/src/services/api.js
-// Base URL of the API
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api"
+// MICROSERVICIO: document-microservice
+// ARCHIVO: src/services/api.js
 
-// Function to get the authentication token from localStorage
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("auth_token")
-  console.log("Token obtained:", token ? "Token present" : "Token not found")
-  return token
-    ? {
-        Authorization: `Bearer ${token}`,
-        "x-access-token": token,
-      }
-    : {}
-}
+import { authService } from "./auth";
+import axios from 'axios';
 
-// Get all documents
+// URL base de la API
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+
+// Crear instancia de axios
+const api = axios.create({
+  baseURL: API_URL,
+  withCredentials: false, // No enviar cookies
+});
+
+// Interceptor para añadir el token de autenticación a todas las solicitudes
+api.interceptors.request.use(
+  (config) => {
+    const token = authService.getToken();
+    console.log("Token para API:", token ? "Token presente" : "Token no encontrado");
+    
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
+      config.headers["x-access-token"] = token;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Obtener todos los documentos
 export async function fetchDocuments(userId = null) {
   try {
-    let url = `${API_URL}/documents`
+    let url = `/documents`;
     if (userId) {
-      url += `?userId=${userId}`
+      url += `?userId=${userId}`;
     }
     
-    const response = await fetch(url, {
-      mode: "cors",
-      credentials: "same-origin",
-      headers: {
-        Accept: "application/json",
-        ...getAuthHeaders(),
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error("Error getting documents")
-    }
-
-    return await response.json()
+    const response = await api.get(url);
+    return response.data;
   } catch (error) {
-    console.error("Error getting documents:", error)
-    throw error
+    console.error("Error al obtener documentos:", error);
+    throw error;
   }
 }
 
-// Upload a document
+// Subir un documento
 export async function uploadDocument(formData) {
   try {
-    const response = await fetch(`${API_URL}/documents`, {
-      method: "POST",
-      body: formData,
-      mode: "cors",
-      credentials: "same-origin",
+    const response = await api.post(`/documents`, formData, {
       headers: {
-        ...getAuthHeaders(),
-        // Do not set Content-Type, it will be set automatically for FormData
-      },
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || "Error uploading document")
-    }
-
-    return await response.json()
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
   } catch (error) {
-    console.error("Error uploading document:", error)
-    throw error
+    console.error("Error al subir documento:", error);
+    throw error;
   }
 }
 
-// Delete a document
+// Eliminar un documento
 export async function deleteDocument(documentId) {
   try {
-    const response = await fetch(`${API_URL}/documents/${documentId}`, {
-      method: "DELETE",
-      mode: "cors",
-      credentials: "same-origin",
-      headers: {
-        ...getAuthHeaders(),
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error("Error deleting document")
-    }
-
-    return true
+    await api.delete(`/documents/${documentId}`);
+    return true;
   } catch (error) {
-    console.error("Error deleting document:", error)
-    throw error
+    console.error("Error al eliminar documento:", error);
+    throw error;
   }
 }
 
-// Get document details
+// Obtener detalles de un documento
 export async function getDocumentDetails(documentId) {
   try {
-    const response = await fetch(`${API_URL}/documents/${documentId}`, {
-      mode: "cors",
-      credentials: "same-origin",
-      headers: {
-        Accept: "application/json",
-        ...getAuthHeaders(),
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error("Error getting document details")
-    }
-
-    return await response.json()
+    const response = await api.get(`/documents/${documentId}`);
+    return response.data;
   } catch (error) {
-    console.error("Error getting document details:", error)
-    throw error
+    console.error("Error al obtener detalles del documento:", error);
+    throw error;
   }
 }

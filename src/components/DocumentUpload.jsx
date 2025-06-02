@@ -72,7 +72,7 @@ function DocumentUpload() {
     <div className="bg-white shadow-md rounded-lg p-6">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Upload Document</h1>
 
-      {!isAuthenticated && (
+      {/* {!isAuthenticated && (
         <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
           <p>
             You are uploading a document as an anonymous user. To associate this document with your account,{" "}
@@ -85,7 +85,7 @@ function DocumentUpload() {
             first.
           </p>
         </div>
-      )}
+      )} */}
 
       {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
 

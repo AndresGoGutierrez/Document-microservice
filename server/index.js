@@ -32,55 +32,67 @@ app.use(
     origin: ["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173"],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "x-access-token"],
-    credentials: true,
+    exposedHeaders: ["Content-Type", "Authorization", "x-access-token"],
+    credentials: false,
   }),
 )
 
 // Middleware to handle preflight requests
 app.options("*", cors())
 
+
+// MICROSERVICIO: document-microservice
+// ARCHIVO: server/index.js
+
+// Middleware para extraer información del usuario del token
 app.use((req, res, next) => {
-  // Get the authorization token
+  // Obtener el token de todos los lugares posibles
   const authHeader = req.headers.authorization;
   const xAccessToken = req.headers['x-access-token'];
-  console.log("[Backend] Full headers:", req.headers);
+  const cookieToken = req.cookies?.auth_token;
+  
+  console.log("[Backend] Headers completos:", req.headers);
   console.log("[Backend] Authorization header:", authHeader);
   console.log("[Backend] x-access-token header:", xAccessToken);
+  console.log("[Backend] Cookie auth_token:", cookieToken);
   
+  // Intentar extraer el token
   let token = null;
   
   if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.substring(7); // Remove 'Bearer '
+    token = authHeader.substring(7); // Quitar 'Bearer '
   } else if (xAccessToken) {
     token = xAccessToken;
-  }
-
-  console.log("[Backend] Extracted token:", token ? "Token present" : "Token not found");
-
-  if (token) {
-    try {
-      // We do not verify the token signature because we don't have the secret key
-      // We only extract payload information
-      const decoded = jwt.decode(token)
-      console.log("Decoded token:", decoded)
-      req.user = {
-        id: decoded.id || decoded.sub || 'anonymous',
-        name: decoded.username || decoded.name || 'Anonymous User'
-      }
-      console.log('Authenticated user:', req.user)
-    } catch (error) {
-      console.error('Error decoding token:', error)
-      req.user = { id: 'anonymous', name: 'Anonymous User' }
-    }
-  } else {
-    console.log("No token received")
-    req.user = { id: 'anonymous', name: 'Anonymous User' }
+  } else if (cookieToken) {
+    token = cookieToken;
   }
   
-  next()
-})
+  console.log("[Backend] Token extraído:", token ? "Token presente" : "Token no encontrado");
+  
+  if (token) {
+    try {
+      // Decodificar el token sin verificar la firma
+      const decoded = jwt.decode(token);
+      console.log("[Backend] Token decodificado:", decoded);
+      
+      req.user = {
+        id: decoded.id || decoded.sub || 'anonymous',
+        name: decoded.username || decoded.name || 'Usuario Anónimo'
+      };
+      console.log('[Backend] Usuario autenticado:', req.user);
+    } catch (error) {
+      console.error('[Backend] Error al decodificar token:', error);
+      req.user = { id: 'anonymous', name: 'Usuario Anónimo' };
+    }
+  } else {
+    console.log("[Backend] No se recibió token");
+    req.user = { id: 'anonymous', name: 'Usuario Anónimo' };
+  }
+  
+  next();
+});// Middleware to parse JSON
 
-// Middleware to parse JSON
+
 app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ limit: '50mb', extended: true }))
 
@@ -274,7 +286,7 @@ app.use((err, req, res, next) => {
   console.error("Server error:", err)
 
   // Apply CORS headers to error responses as well
-  res.header("Access-Control-Allow-Origin", "*")
+  res.header("Access-Control-Allow-Origin", req.headers.origin || "http://localhost:3000")
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
